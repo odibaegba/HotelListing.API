@@ -2,18 +2,15 @@
 
 namespace HotelListing.API.DTOs.Country
 {
-    public class GetCountryDto
+    public class GetCountryDto : BaseCountryDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string ShortName { get; set; } = string.Empty;
+
     }
 
-    public class CountryDto
+    public class CountryDto : BaseCountryDto
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string ShortName { get; set; } = string.Empty;
 
         public List<HotelDto> Hotels { get; set; }
     }
