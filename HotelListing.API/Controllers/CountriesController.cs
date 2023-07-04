@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
 using HotelListing.API.Contacts;
+using HotelListing.API.DTOs;
 using HotelListing.API.DTOs.Country;
+using HotelListing.API.Exceptions;
 using HotelListing.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.API.Controllers
@@ -15,20 +18,31 @@ namespace HotelListing.API.Controllers
     {
         private readonly ICountriesRepository _countriesRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<CountriesController> _logger;
 
-        public CountriesController(ICountriesRepository countriesRepository, IMapper mapper)
+        public CountriesController(ICountriesRepository countriesRepository, IMapper mapper, ILogger<CountriesController> logger)
         {
             _countriesRepository = countriesRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         // GET: api/Countries
-        [HttpGet]
+        [HttpGet("GetAll")]
+        [EnableQuery]
         public async Task<ActionResult<IEnumerable<GetCountryDto>>> GetCountries()
         {
             var countries = await _countriesRepository.GetAllAsync();
             var records = _mapper.Map<List<GetCountryDto>>(countries);
             return Ok(records);
+        }
+
+        // GET: api/Countries/?StartIndex=0&PageSize=25&PageNumber =1
+        [HttpGet()]
+        public async Task<ActionResult<PagedResult<GetCountryDto>>> GetPagedCountries([FromQuery] QueryParameters queryParameters)
+        {
+            var PagedCountriesResult = await _countriesRepository.GetAllAsync<GetCountryDto>(queryParameters);
+            return Ok(PagedCountriesResult);
         }
 
         // GET: api/Countries/5
@@ -40,7 +54,9 @@ namespace HotelListing.API.Controllers
 
             if (country == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetCountry), id);
+                // _logger.LogWarning($"No record found in {nameof(GetCountry)} with Id {id}.");
+                //return NotFound();
             }
 
             var countryDto = _mapper.Map<CountryDto>(country);
@@ -62,7 +78,8 @@ namespace HotelListing.API.Controllers
             var country = await _countriesRepository.GetAsync(id);
             if (country == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetCountries), id);
+                // return NotFound();
             }
             _mapper.Map(updateCountryDto, country);
             try
@@ -105,7 +122,8 @@ namespace HotelListing.API.Controllers
             var country = await _countriesRepository.GetAsync(id);
             if (country == null)
             {
-                return NotFound();
+                throw new NotFoundException(nameof(GetCountries), id);
+                // return NotFound();
             }
             await _countriesRepository.DeleteAsync(id);
             return NoContent();
